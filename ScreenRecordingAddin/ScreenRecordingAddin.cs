@@ -30,6 +30,16 @@ namespace ScreenRecording.ScreenRecordingAddin
             }
         }
 
+        protected override IEnumerable<string> SupportingAttributes
+        {
+            get
+            {
+                return new string[]
+                {
+                    SCREEN_RECORDING_ATTRIBUTE_GUID
+                };
+            }
+        }
         public ScreenRecordingAddin()
         {
             
@@ -55,9 +65,11 @@ namespace ScreenRecording.ScreenRecordingAddin
 
                 _qualityManagementManager = QualityManagementManager.GetInstance(_session);
 
+                Trace.Note("Screen Recording Addin: Started");
             }
             catch (Exception ex)
             {
+                Trace.Error("Screen Recording Addin: " + ex.ToString());
                 MessageBox.Show("Screen Recording Addin initialization failed! " + ex.Message + "\n\nPlease contact your system administrator.", "Critical error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -121,22 +133,37 @@ namespace ScreenRecording.ScreenRecordingAddin
             {
                 return; // Screen Recording has already started for this interaction. Exiting.
             }
-
+            Trace.Note("Screen Recording Addin: Starting screen recording");
             var screenRecorder = new ScreenRecorder(_qualityManagementManager);
-            screenRecorder.StartRecordingAsync(interaction.GetAttribute(_session.UserId), OnStartRecordingInitiated, interaction);
+            var guids = screenRecorder.StartRecording(_session.UserId);
+            foreach (var guid in guids)
+            {
+                Trace.Verbose("Screen Recording Addin: Guid: " + guid.ToString());
+            }
+
+            var guidsString = String.Join("|", guids);
+
+            interaction.SetAttribute(SCREEN_RECORDING_ATTRIBUTE_GUID, guidsString);
+            Trace.Verbose("Screen Recording Addin: GUIDs: " + guidsString);
         }
 
         private void OnStartRecordingInitiated(object sender, StartRecordingCompletedEventArgs e)
         {
             if (e.Error != null)
             {
+                Trace.Error("Screen Recording Addin: " + e.Error.ToString());
                 MessageBox.Show("Screen Recording failed. " + e.Error.Message + "\n\nPlease contact your system administrator.", "Critical error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             var interaction = (IInteraction)e.UserState;
-            var guids = e.RecordingIds;
+            Trace.Verbose("Screen Recording Addin: Interaction Id: " + interaction.InteractionId);
+            foreach (var guid in e.RecordingIds)
+            {
+                Trace.Verbose("Guid: " + guid.ToString());
+            }
+            var guids = String.Join("|", e.RecordingIds);
 
-            interaction.SetAttribute(SCREEN_RECORDING_ATTRIBUTE_GUID, String.Join("|", guids));
-
+            interaction.SetAttribute(SCREEN_RECORDING_ATTRIBUTE_GUID, guids);
+            Trace.Verbose("Screen Recording Addin: GUIDs: " + guids);
         }
 
         private void StopScreenRecording(IInteraction interaction)
@@ -154,7 +181,7 @@ namespace ScreenRecording.ScreenRecordingAddin
                 .Select(g => Guid.Parse(g))
                 .ToArray();
             
-            screenRecorder.StopRecordingAsync(interaction.GetAttribute(_session.UserId), guids, OnScreenRecordingStopped, interaction);
+            screenRecorder.StopRecordingAsync(_session.UserId, guids, OnScreenRecordingStopped, interaction);
         }
 
         private void OnScreenRecordingStopped(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
