@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?define Win64 = "no" ?>
+<?define ProductName = "Screen Recording Addin" ?>
+<?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+<?define ProductUpgradeCode = "19DBA20C-554C-471F-90F0-558A86A6B2A1"?>
+<?define ManufacturerName = "Interactive Intelligence"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="$(var.ProductName)" Language="1033" Version="!(bind.FileVersion.ScreenRecording.ScreenRecordingAddin.dll)" Manufacturer="$(var.ManufacturerName)" UpgradeCode="$(var.ProductUpgradeCode)">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    
+    <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
+    
+    <!--Directory Structure-->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="$(var.PlatformProgramFilesFolder)">
+        <Directory Id="INSTALLLOCATION" Name="$(var.ProductName)">
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <!--Uninstall Previous Versions-->
+    <Upgrade Id="$(var.ProductUpgradeCode)">
+      <UpgradeVersion Minimum="!(bind.FileVersion.ScreenRecording.ScreenRecordingAddin.dll)" IncludeMinimum="no" OnlyDetect="yes" Property="NEWERVERSIONDETECTED" />
+      <UpgradeVersion Minimum="0.0.0" Maximum="!(bind.FileVersion.ScreenRecording.ScreenRecordingAddin.dll)" IncludeMinimum="yes" IncludeMaximum="yes" Property="OLDERVERSIONBEINGUPGRADED" />
+    </Upgrade>
+ 
+    <Feature Id="ProductFeature" Title="Screen Recording Addin" Level="1">
+      <ComponentGroupRef Id="Addin" />
+    </Feature>
+    
+    <InstallExecuteSequence>
+      <RemoveExistingProducts After="InstallInitialize" />
+      <Custom Action="NewerVersion" After="FindRelatedProducts">NEWERVERSIONDETECTED</Custom>
+    </InstallExecuteSequence>
+
+    <CustomAction Id="NewerVersion" Error="A later version of [ProductName] is already installed." />
+ 
+    <UI>
+      <UIRef Id="WixUI_InstallDir" />
+      <UIRef Id="WixUI_ErrorProgressText" />
+    </UI>
+ 
+    <WixVariable Id="WixUIBannerBmp" Value="banner.png" />
+    <WixVariable Id="WixUIDialogBmp" Value="dialog.png" />
+    <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
+ 
+ 
+    <!--Add/Remove Programs Icon Image-->
+    <Icon Id="ininlogo.ico" SourceFile="ininlogo.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="ininlogo.ico" />
+
+    <!--Install Location Path-->
+    <Property Id="INSTALLLOCATION">
+      <![CDATA[C:\Program Files (x86)\Interactive Intelligence\ICUserApps\Addins]]>
+    </Property>
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
+ 
+  </Product>
+ 
+  <Fragment>
+    <ComponentGroup Id="Addin">
+      <Component Id="AddinFiles" Guid="F0BB7F0C-5164-48C2-9A90-9DCC8EA0D73A" Directory="INSTALLLOCATION">
+        <File Id="ScreenRecording.ScreenRecordingAddin.dll" Name="ScreenRecording.ScreenRecordingAddin.dll" Source="..\ScreenRecordingAddin\bin\Release\ScreenRecording.ScreenRecordingAddin.dll" Vital="yes" KeyPath="no" DiskId="1"/>
+        <File Id="ScreenRecording.ScreenRecordingAddin.pdb" Name="ScreenRecording.ScreenRecordingAddin.pdb" Source="..\ScreenRecordingAddin\bin\Release\ScreenRecording.ScreenRecordingAddin.pdb" Vital="yes" KeyPath="no" DiskId="1"/>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>
